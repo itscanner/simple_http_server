@@ -1,5 +1,6 @@
 import os
 import socket
+import mimetypes
 
 class HTTP_Server:
     def run_server(self):
@@ -54,14 +55,17 @@ class HTTP_Server:
         except Exception as e:
             return b"HTTP/1.1 400 Bad Request\r\n\r\n"
 
-        # Handling file response
+        # handle file response
         if not os.path.exists(filename):
             response_line = b"HTTP/1.1 404 Not Found\r\n"
             response_headers = b"Content-Type: text/html\r\n\r\n"
             response_body = b"<h1>404 Not Found</h1>"
         else:
             response_line = b"HTTP/1.1 200 OK\r\n"
-            response_headers = b"Content-Type: text/html\r\n"
+            mime_type, _ = mimetypes.guess_type(filename)
+            if mime_type is None:
+                mime_type = 'application/octet-stream'  # Use a binary stream type if MIME type is unknown
+            response_headers = b"Content-Type: " + mime_type.encode() + b"\r\n"
             response_headers += b"Content-Length: " + str(os.path.getsize(filename)).encode() + b"\r\n\r\n"
             with open(filename, 'rb') as f:
                 response_body = f.read()
