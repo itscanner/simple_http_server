@@ -22,6 +22,7 @@ class HTTP_Server:
                 client.sendall(response)
                 client.close()
         except KeyboardInterrupt:
+            # In case we want to shut down the server (for debugging)
             print("Shutting down server.")
         finally:
             s.close()
@@ -31,7 +32,7 @@ class HTTP_Server:
         # The server will listen on port 80
         # returns: the socket
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('', 80))  # Use 80 for non-root testing
+        s.bind(('', 80))  # port 80 is the default port for HTTP
         return s
     
     def handle_request(self, request):
@@ -56,7 +57,14 @@ class HTTP_Server:
             return b"HTTP/1.1 400 Bad Request\r\n\r\n"
 
         # handle file response
-        if not os.path.exists(filename):
+        if filename == '/' or filename == '':
+            # default to index.html
+            response_line = b"HTTP/1.1 200 OK\r\n"
+            response_headers = b"Content-Type: text/html\r\n"
+            response_headers += b"Content-Length: " + str(os.path.getsize('index.html')).encode() + b"\r\n\r\n"
+            with open('index.html', 'rb') as f:
+                response_body = f.read()
+        elif not os.path.exists(filename):
             response_line = b"HTTP/1.1 404 Not Found\r\n"
             response_headers = b"Content-Type: text/html\r\n\r\n"
             response_body = b"<h1>404 Not Found</h1>"
@@ -64,7 +72,8 @@ class HTTP_Server:
             response_line = b"HTTP/1.1 200 OK\r\n"
             mime_type, _ = mimetypes.guess_type(filename)
             if mime_type is None:
-                mime_type = 'application/octet-stream'  # Use a binary stream type if MIME type is unknown
+                # default to binary data
+                mime_type = 'application/octet-stream'
             response_headers = b"Content-Type: " + mime_type.encode() + b"\r\n"
             response_headers += b"Content-Length: " + str(os.path.getsize(filename)).encode() + b"\r\n\r\n"
             with open(filename, 'rb') as f:
