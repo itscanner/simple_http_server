@@ -60,22 +60,29 @@ class HTTP_Server:
         if filename == '/' or filename == '':
             # default to index.html
             response_line = b"HTTP/1.1 200 OK\r\n"
+            
             response_headers = b"Content-Type: text/html\r\n"
-            response_headers += b"Content-Length: " + str(os.path.getsize('index.html')).encode() + b"\r\n\r\n"
+            response_headers += b"Content-Length: " + str(os.path.getsize('index.html')).encode() + b"\r\n"
+            response_headers += b"Connection: close\r\n\r\n"
+            
             with open('index.html', 'rb') as f:
                 response_body = f.read()
         elif not os.path.exists(filename):
             response_line = b"HTTP/1.1 404 Not Found\r\n"
-            response_headers = b"Content-Type: text/html\r\n\r\n"
+            response_headers = b"Content-Type: text/html\r\n"
+            response_headers += b"Connection: close\r\n\r\n"
             response_body = b"<h1>404 Not Found</h1>"
         else:
             response_line = b"HTTP/1.1 200 OK\r\n"
             mime_type, _ = mimetypes.guess_type(filename)
+            
             if mime_type is None:
                 # default to binary data
                 mime_type = 'application/octet-stream'
+            
             response_headers = b"Content-Type: " + mime_type.encode() + b"\r\n"
-            response_headers += b"Content-Length: " + str(os.path.getsize(filename)).encode() + b"\r\n\r\n"
+            response_headers += b"Content-Length: " + str(os.path.getsize(filename)).encode() + b"\r\n"
+            response_headers += b"Connection: close\r\n\r\n"
             with open(filename, 'rb') as f:
                 response_body = f.read()
         
