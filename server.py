@@ -1,6 +1,7 @@
 import os
 import socket
 import mimetypes
+import threading
 
 class HTTP_Server:
     def run_server(self):
@@ -15,12 +16,8 @@ class HTTP_Server:
                 (client, address) = s.accept()
                 print(f"Received a connection from {address}")
                 
-                data = client.recv(1024)
-                
-                response = self.handle_request(data)
-                
-                client.sendall(response)
-                client.close()
+                # create a new thread to handle connection
+                threading.Thread(target=self.handle_client, args=(client,)).start()
         except KeyboardInterrupt:
             # In case we want to shut down the server (for debugging)
             print("Shutting down server.")
@@ -34,6 +31,14 @@ class HTTP_Server:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind(('', 80))  # port 80 is the default port for HTTP
         return s
+    
+    def handle_client(self, client):
+        try:
+            data = client.recv(1024)
+            response = self.handle_request(data)
+            client.sendall(response)
+        finally:
+            client.close()
     
     def handle_request(self, request):
         # Handles the incoming request
